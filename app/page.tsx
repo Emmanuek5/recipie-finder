@@ -1,101 +1,128 @@
-import Image from "next/image";
+/* eslint-disable react/no-unescaped-entities */
+"use client";
+
+import { useEffect, useState } from "react";
+import { SearchBar } from "./components/SearchBar";
+import { RecipeCard } from "./components/RecipeCard";
+import { Recipe } from "./types/recipe";
+import {
+  searchRecipes,
+  getRandomRecipes,
+  CUISINE_OPTIONS,
+} from "./services/recipeService";
+import { useRecipeStore } from "./store/recipeStore";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { searchFilters } = useRecipeStore();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  useEffect(() => {
+    async function fetchRecipes() {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await searchRecipes(searchFilters);
+        setRecipes(response.results);
+      } catch (err) {
+        setError("Failed to fetch recipes. Please try again later.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (searchFilters.query) {
+      fetchRecipes();
+    } else {
+      setRecipes([]);
+    }
+  }, [searchFilters]);
+
+  const handleRecommend = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      // Get 3 random cuisines
+      const randomCuisines = [...CUISINE_OPTIONS]
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 3);
+      const recipes = await getRandomRecipes(randomCuisines);
+      setRecipes(recipes);
+    } catch (err) {
+      setError("Failed to fetch recommendations. Please try again later.");
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-gradient-to-b from-indigo-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">
+            Find Your Perfect Recipe
+          </h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+            Search through thousands of recipes and discover your next favorite
+            meal
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <div className="w-full max-w-4xl">
+              <SearchBar />
+            </div>
+            <button
+              onClick={handleRecommend}
+              className="flex items-center gap-2 px-6 py-2 bg-white text-indigo-600 rounded-lg shadow-md hover:shadow-lg hover:bg-indigo-50 transition-all duration-200 whitespace-nowrap"
+            >
+              <SparklesIcon className="w-5 h-5" />
+              <span>Recommend for me</span>
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-500 border-r-transparent motion-reduce:animate-[spin_1.5s_linear_infinite]" />
+          </div>
+        )}
+
+        {error && (
+          <div className="text-center py-12">
+            <div className="inline-block px-4 py-2 rounded-lg bg-red-50 text-red-600">
+              {error}
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && recipes.length === 0 && searchFilters.query && (
+          <div className="text-center py-12">
+            <div className="inline-block px-4 py-2 rounded-lg bg-amber-50 text-amber-600">
+              No recipes found. Try different search terms or filters.
+            </div>
+          </div>
+        )}
+
+        {!loading && !error && recipes.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {recipes.map((recipe) => (
+              <RecipeCard key={recipe.id} recipe={recipe} />
+            ))}
+          </div>
+        )}
+
+        {!searchFilters.query && recipes.length === 0 && (
+          <div className="text-center py-12">
+            <div className="inline-block px-6 py-3 rounded-lg bg-indigo-50 text-indigo-600">
+              Start searching for recipes or click "Recommend for me" for
+              inspiration! 🍳
+            </div>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
